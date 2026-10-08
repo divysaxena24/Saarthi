@@ -17,7 +17,7 @@ export const bedrockClient = new BedrockRuntimeClient({
 // Initialize Groq client purely for Speech-to-Text (Whisper) support
 // since AWS Transcribe stream configuration is out of scope for immediate migration.
 export const groq = new Groq({
-    apiKey: process.env.GROQ_API_KEY || "gsk_placeholder_build_key",
+    apiKey: process.env.GROQ_API_KEY,
 });
 
 /**

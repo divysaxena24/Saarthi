@@ -45,7 +45,7 @@
     "framer-motion": "^12.34.3",
     "googleapis": "^171.4.0",
     "groq-sdk": "^0.37.0",
-    "inngest": "^3.51.0",
+    "inngest": "^3.54.0",
     "jspdf": "^4.1.0",
     "jspdf-autotable": "^5.0.7",
     "lucide-react": "^0.563.0",
