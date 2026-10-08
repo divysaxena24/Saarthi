@@ -55,3 +55,24 @@ jobs:
           MY_AWS_ACCESS_KEY_ID: "AKIA_CI_PLACEHOLDER"
           MY_AWS_SECRET_ACCESS_KEY: "ci_placeholder_secret"
         run: npm run build
+
+  docker-build:
+    name: 🐳 Docker Image Build Verification
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          tags: saarthi:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
