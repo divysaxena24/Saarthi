@@ -58,8 +58,13 @@ export async function generateGroqCompletion(
             });
         }
 
+        // Validate and sanitize bedrockModelId to prevent passing Groq model names to AWS Bedrock
+        const bedrockModelId = (options?.model && (options.model.includes("amazon.") || options.model.includes("meta.") || options.model.includes("anthropic.")))
+            ? options.model
+            : "amazon.nova-lite-v1:0";
+
         const command = new ConverseCommand({
-            modelId: options?.model || "amazon.nova-lite-v1:0",
+            modelId: bedrockModelId,
             system: systemMessages.length > 0 ? systemMessages : undefined,
             messages: conversationMessages,
             inferenceConfig: {
@@ -128,10 +133,11 @@ export async function analyzeWithGroqLPU(
     messages: { role: "system" | "user" | "assistant"; content: string }[],
     options: any = {}
 ) {
+    const requestedModel = options.model || "llama-3.1-8b-instant";
     try {
         const response = await groq.chat.completions.create({
             messages: messages as any,
-            model: options.model || "llama-3.3-70b-versatile",
+            model: requestedModel,
             temperature: options.temperature ?? 0.3,
             max_tokens: options.max_tokens ?? 4096,
             response_format: options.response_format,
@@ -147,7 +153,41 @@ export async function analyzeWithGroqLPU(
             ]
         };
     } catch (error: any) {
-        console.error("Native Groq API Error:", error);
-        throw error;
+        console.warn(`Groq API error with model ${requestedModel}: ${error?.message || error}. Trying fallback model llama-3.1-8b-instant...`);
+        try {
+            const fallbackResponse = await groq.chat.completions.create({
+                messages: messages as any,
+                model: "llama-3.1-8b-instant",
+                temperature: options.temperature ?? 0.3,
+                max_tokens: options.max_tokens ?? 4096,
+                response_format: options.response_format,
+            });
+
+            return {
+                choices: [
+                    {
+                        message: {
+                            content: fallbackResponse.choices[0]?.message?.content || ""
+                        }
+                    }
+                ]
+            };
+        } catch (fallbackError: any) {
+            console.warn(`Groq API fallback error: ${fallbackError?.message || fallbackError}. Falling back to AWS Bedrock...`);
+            const bedrockText = await generateGroqCompletion(messages, {
+                ...options,
+                model: "amazon.nova-lite-v1:0"
+            });
+            return {
+                choices: [
+                    {
+                        message: {
+                            content: bedrockText
+                        }
+                    }
+                ]
+            };
+        }
     }
 }
+

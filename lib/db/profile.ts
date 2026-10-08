@@ -88,33 +88,44 @@ export async function getFullUserProfile(userEmail: string) {
         orderBy: [desc(resumeAnalysisTable.createdAt)]
     });
 
-    const insights = profile.insights || {
-        jobReadinessScore: 0,
-        atsScore: 0,
-        keywordStrength: "Low",
-        projectImpact: "Weak",
-        breakdown: JSON.stringify({
-            resumeQuality: 0,
-            projectsStrength: 0,
-            skillsCoverage: 0,
-            experience: 0
-        }),
-        suggestions: "[]",
-        sectionAnalysis: "{}",
-        improvementPlan: "{}"
-    };
+    let insights = profile.insights;
 
-    if (latestAnalysis) {
-        const analysisData = JSON.parse(latestAnalysis.analysisData);
-        insights.jobReadinessScore = analysisData.score || 0;
-        insights.atsScore = analysisData.scoreBreakdown?.ats || analysisData.score || 0;
-        insights.breakdown = JSON.stringify({
-            resumeQuality: analysisData.scoreBreakdown?.ats || 0,
-            projectsStrength: analysisData.scoreBreakdown?.projects || 0,
-            skillsCoverage: analysisData.scoreBreakdown?.skills || 0,
-            experience: analysisData.scoreBreakdown?.experience || 0
-        });
-        insights.suggestions = JSON.stringify(analysisData.criticalGaps || []);
+    // Only fallback to latestAnalysis if profile.insights is missing or has 0 ats/jobReadiness score
+    if (!insights || (!insights.atsScore && !insights.jobReadinessScore)) {
+        insights = insights || {
+            jobReadinessScore: 0,
+            atsScore: 0,
+            keywordStrength: "Low",
+            projectImpact: "Weak",
+            breakdown: JSON.stringify({
+                resumeQuality: 0,
+                projectsStrength: 0,
+                skillsCoverage: 0,
+                experience: 0
+            }),
+            suggestions: "[]",
+            sectionAnalysis: "{}",
+            improvementPlan: "{}"
+        };
+
+        if (latestAnalysis) {
+            try {
+                const analysisData = JSON.parse(latestAnalysis.analysisData);
+                const score = Number(analysisData.score) || 0;
+                const atsScore = Number(analysisData.scoreBreakdown?.ats || analysisData.score) || 0;
+                insights.jobReadinessScore = score;
+                insights.atsScore = atsScore;
+                insights.breakdown = JSON.stringify({
+                    resumeQuality: atsScore,
+                    projectsStrength: Number(analysisData.scoreBreakdown?.projects) || 0,
+                    skillsCoverage: Number(analysisData.scoreBreakdown?.skills) || 0,
+                    experience: Number(analysisData.scoreBreakdown?.experience) || 0
+                });
+                insights.suggestions = JSON.stringify(analysisData.criticalGaps || []);
+            } catch (e) {
+                console.error("Error parsing latestAnalysis analysisData:", e);
+            }
+        }
     }
 
     return {

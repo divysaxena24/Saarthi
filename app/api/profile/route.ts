@@ -315,32 +315,57 @@ export async function POST(req: NextRequest) {
             }
 
             // UPSERT Insights
+            const jobReadinessScore = Number(insights.jobReadinessScore) || 0;
+            const atsScore = Number(insights.atsScore) || 0;
+            const breakdownStr = typeof insights.breakdown === 'string' ? insights.breakdown : JSON.stringify(insights.breakdown || {});
+            const suggestionsStr = typeof insights.suggestions === 'string' ? insights.suggestions : JSON.stringify(insights.suggestions || []);
+            const sectionAnalysisStr = typeof insights.sectionAnalysis === 'string' ? insights.sectionAnalysis : JSON.stringify(insights.sectionAnalysis || {});
+            const improvementPlanStr = typeof insights.improvementPlan === 'string' ? insights.improvementPlan : JSON.stringify(insights.improvementPlan || {});
+
             await tx.insert(profileInsightsTable)
                 .values({
                     userEmail,
-                    jobReadinessScore: insights.jobReadinessScore || 0,
-                    atsScore: insights.atsScore || 0,
+                    jobReadinessScore,
+                    atsScore,
                     keywordStrength: insights.keywordStrength || "Low",
                     projectImpact: insights.projectImpact || "Weak",
-                    breakdown: JSON.stringify(insights.breakdown || {}),
-                    suggestions: JSON.stringify(insights.suggestions || []),
-                    sectionAnalysis: JSON.stringify(insights.sectionAnalysis || {}),
-                    improvementPlan: JSON.stringify(insights.improvementPlan || {}),
+                    breakdown: breakdownStr,
+                    suggestions: suggestionsStr,
+                    sectionAnalysis: sectionAnalysisStr,
+                    improvementPlan: improvementPlanStr,
                 })
                 .onConflictDoUpdate({
                     target: [profileInsightsTable.userEmail],
                     set: {
-                        jobReadinessScore: insights.jobReadinessScore || 0,
-                        atsScore: insights.atsScore || 0,
+                        jobReadinessScore,
+                        atsScore,
                         keywordStrength: insights.keywordStrength || "Low",
                         projectImpact: insights.projectImpact || "Weak",
-                        breakdown: JSON.stringify(insights.breakdown || {}),
-                        suggestions: JSON.stringify(insights.suggestions || []),
-                        sectionAnalysis: JSON.stringify(insights.sectionAnalysis || {}),
-                        improvementPlan: JSON.stringify(insights.improvementPlan || {}),
+                        breakdown: breakdownStr,
+                        suggestions: suggestionsStr,
+                        sectionAnalysis: sectionAnalysisStr,
+                        improvementPlan: improvementPlanStr,
                         updatedAt: new Date()
                     }
                 });
+
+            // Also keep resumeAnalysisTable in sync for consistency across dashboard tools
+            await tx.insert(resumeAnalysisTable).values({
+                userEmail,
+                resumeText,
+                resumeName: file.name || "Uploaded Resume",
+                jobDescription: "Profile Auto-Sync",
+                analysisData: JSON.stringify({
+                    score: jobReadinessScore,
+                    scoreBreakdown: {
+                        ats: atsScore,
+                        projects: Number(insights.breakdown?.projectsStrength) || 0,
+                        skills: Number(insights.breakdown?.skillsCoverage) || 0,
+                        experience: Number(insights.breakdown?.experience) || 0
+                    },
+                    criticalGaps: Array.isArray(insights.suggestions) ? insights.suggestions : []
+                })
+            });
         });
 
         // Return the full synthesized profile matching the GET structure

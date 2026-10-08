@@ -14,7 +14,7 @@ export const MODELS = {
     /** Smallest model for simple categorization like video ranking */
     RANKING: "meta.llama3-8b-instruct-v1:0",
     /** Flagship Groq Model for fast structured output analysis */
-    GROQ_PRIMARY: "llama-3.3-70b-versatile",
+    GROQ_PRIMARY: "llama-3.1-8b-instant",
 } as const;
 
 export type ModelId = (typeof MODELS)[keyof typeof MODELS];
