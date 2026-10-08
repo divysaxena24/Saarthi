@@ -4,6 +4,7 @@ const isPublicRoute = createRouteMatcher([
     '/',
     '/privacy',
     '/terms',
+    '/api/health',
     '/api/ai-career-chat-agent/public-chat(.*)',
     '/sign-in(.*)',
     '/sign-up(.*)',

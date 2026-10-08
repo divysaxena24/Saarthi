@@ -129,6 +129,29 @@ graph LR
 
 ---
 
+## 🐳 Docker Support & Containerization
+
+Saarthi features a multi-stage production `Dockerfile` (Node.js 22 Alpine with Next.js standalone output) and a local `docker-compose.yml` stack.
+
+### Build Production Docker Image
+```bash
+docker build -t saarthi .
+```
+
+### Run Container
+```bash
+docker run --env-file .env -p 3000:3000 saarthi
+```
+- Application: [http://localhost:3000](http://localhost:3000)
+- Container Healthcheck: [http://localhost:3000/api/health](http://localhost:3000/api/health)
+
+### Local Development Stack (App + Postgres)
+```bash
+docker compose up --build
+```
+
+---
+
 ## 🤝 Contributing
 
 Saarthi is under active evolution. Contributions that enhance the neural architecture or design system are welcome!
