@@ -8,7 +8,7 @@ on:
 
 jobs:
   verify-and-build-docker:
-    name: 🐳 Verify & Build Docker Image
+    name: Verify & Build Docker Image
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
