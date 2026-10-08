@@ -1,9 +1,9 @@
-# Multi-stage production Dockerfile for Next.js App Router (Saarthi)
+# Multi-stage production Dockerfile for Saarthi (Next.js 16 + Node.js 22)
 
 # 1. Base Image
-FROM node:20-alpine AS base
+FROM node:22-alpine AS base
 
-# 2. Install Dependencies
+# 2. Dependencies Stage
 FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
@@ -11,22 +11,14 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 
-# 3. Build Application
+# 3. Builder Stage
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Build-time environment variables
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_OPTIONS="--max-old-space-size=4096"
-ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_ci_placeholder"
-ENV CLERK_SECRET_KEY="sk_test_ci_placeholder"
-ENV NEXT_PUBLIC_NEON_DB_CONNECTION_STRING="postgresql://user:pass@localhost:5432/db"
-ENV GROQ_API_KEY="gsk_ci_placeholder"
-ENV MY_AWS_REGION="us-east-1"
-ENV MY_AWS_ACCESS_KEY_ID="AKIA_CI_PLACEHOLDER"
-ENV MY_AWS_SECRET_ACCESS_KEY="ci_placeholder_secret"
 
 RUN npm run build
 

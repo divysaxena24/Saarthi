@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  saarthi:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: saarthi-app
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - saarthi-network
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: saarthi-db
+    environment:
+      POSTGRES_USER: saarthi
+      POSTGRES_PASSWORD: saarthipassword
+      POSTGRES_DB: saarthidb
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U saarthi -d saarthidb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - saarthi-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  saarthi-network:
+    driver: bridge
